@@ -1,0 +1,91 @@
+@font-face {
+	font-family: 'DepartMono';
+	src: url('./fonts/dep.otf') format('opentype');
+}
+
+:root {
+	--l1: #f9f9f9;
+	--d1: #C7D3C4;
+
+	--l2: #D6CAB8;
+	--d2: #222;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: 'DepartMono';
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+button {
+	all: unset;
+	border: 1px solid var(--d2);
+	padding: .3em;
+	font-size: .8em;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: var(--d1);
+}
+
+.root {
+	display: grid;
+	width: 100vw;
+	height: 100vh;
+	grid-template-rows: 8% 84% 8%;
+}
+
+.main-view {
+	overflow-y: scroll;
+	border: 1px solid black;
+	padding: 1em;
+	margin: 1em;
+}
+
+.main-view .week {
+	display: grid;
+  grid-template-columns: repeat(7, 1fr);
+	width: 100%;
+	height: 220px;
+}
+.week:hover {
+  background: yellow;
+}
+
+.week .day {
+	width: 85%;
+	height: 200px;
+	overflow-y: scroll;
+	margin : .5em;
+	padding : .5em;
+	border: 1px solid black;
+}
+
+.main-view .item {
+	width: 80%;
+	margin : .5em;
+	padding : .5em;
+	border: 1px solid black;
+}
+
+.top-bar {
+  padding: .5em;
+  margin: 1em;
+  border: 1px solid black;
+  height: 85%;
+}
+
+.bottom-bar {
+  padding: .5em;
+	display: grid;
+	grid-template-columns: 200px 200px;
+  margin: 1em;
+  border: 1px solid black;
+}

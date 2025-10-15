@@ -48,7 +48,7 @@ let parseSpendItem = (block) => {
 							&& e[3].includes('[')
 							&& e[3].includes(']')
 						 ){
-						return {date: e[0], price: e[1], title: e[2], tags: e[3].replace('[', '').replace(']', '').split(''), Date: new Date(e[0])}
+						return {date: e[0], price: e[1], title: e[2], tags: e[3].replace('[', '').replace(']', '').split(','), Date: new Date(e[0])}
 					}
 					else return undefined
 				})

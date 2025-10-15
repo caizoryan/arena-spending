@@ -25,7 +25,7 @@
 
 button {
 	all: unset;
-	border: 1px solid var(--d2);
+	border-bottom: 1px solid var(--d2);
 	padding: .3em;
 	font-size: .8em;
 	cursor: pointer;
@@ -44,48 +44,133 @@ button:hover {
 
 .main-view {
 	overflow-y: scroll;
-	border: 1px solid black;
-	padding: 1em;
-	margin: 1em;
+	padding: 0 1em;
 }
 
 .main-view .week {
 	display: grid;
   grid-template-columns: repeat(7, 1fr);
 	width: 100%;
-	height: 220px;
+	padding: 1em 0;
 }
-.week:hover {
-  background: yellow;
+.week:hover > .day {
+  border-top: 2px solid black;
+}
+
+.week:hover > .day .item {
+  border-top: .1px dotted darkgreen;
+}
+
+span.price {
+	font-weight: 100;
+	font-weight: 600;
+	background-color: lightyellow;
+	font-family: monospace;
+	/* color: maroon; */
+}
+
+.week.sticky {
+	position: sticky;
+	top: 0px;
+	background: white;
+	 
+}
+
+.day-label {
+	width: 85%;
+	top: 20px;
+  margin: .5em;
+  padding: .5em;
+	font-weight: 600;
+	font-family: sans-serif;
+  /* border-top: .1px dotted black; */
 }
 
 .week .day {
 	width: 85%;
-	height: 200px;
-	overflow-y: scroll;
-	margin : .5em;
-	padding : .5em;
-	border: 1px solid black;
+  height: 200px;
+  overflow-y: scroll;
+  margin: .5em;
+  padding: .5em;
+  border-top: .1px dotted black;
+}
+
+.day .top {
+	display: flex;
+  justify-content: space-between;
+}
+
+.top button {
+	border: none;
 }
 
 .main-view .item {
-	width: 80%;
-	margin : .5em;
-	padding : .5em;
-	border: 1px solid black;
+	width: 100%;
+  margin: 1em 0;
+  padding: .25em 0;
+  border-top: .1px solid black;
+}
+
+.item .title{
+	text-transform: capitalize;
+	/* font-style: italic; */
+}
+
+.item:hover {
+	background: lightgrey;
+	cursor: pointer; 
 }
 
 .top-bar {
   padding: .5em;
   margin: 1em;
-  border: 1px solid black;
   height: 85%;
+  grid-template-columns: 10% 8% 72%;
+	display: grid;
+	grid-gap: 1em;
+}
+
+.selections{
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.tag-select {
+	margin-right: 1em;
+}
+
+.tag-select input {
+	margin-right: .4em;
 }
 
 .bottom-bar {
   padding: .5em;
 	display: grid;
-	grid-template-columns: 200px 200px;
+	grid-template-columns: repeat(8, 1fr);
   margin: 1em;
-  border: 1px solid black;
+}
+
+.tag{
+	width: 10px;
+	height: 10px;
+	display: inline-block;
+	margin-left: .5em;
+	border-radius: 50px;
+}
+
+
+.tag.grocery {
+	background: green;
+}
+
+.tag.snack, .tag.snacks {
+	background: lightgreen;
+}
+
+.tag.food {
+	background: red;
+}
+
+.tag.purchase {
+	background: blue;
 }

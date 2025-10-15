@@ -44,7 +44,7 @@ export const add_block = (slug, title, content) => {
 export const get_channel = async (slug) => {
 	let force = true
   console.log("get channel called", slug);
-  return await fetch(host + `channels/${slug}?per=500&${force ? "force=true" : "offline=true"}` /**&page=5**/, {
+  return await fetch(host + `channels/${slug}?per=100&${force ? "force=true" : "offline=true"}` /**&page=5**/, {
     headers: {
       // Authorization: `Bearer ${auth}`,
       // cache: "no-store",
@@ -175,7 +175,7 @@ let filters = {
 	year: 2025,
 	month: 9,
 	week: undefined,
-	tag: undefined
+	tag: []
 }
 
 
@@ -205,23 +205,44 @@ function render(){
 
 	let top_tags = Object.entries(tags).filter(([k, v]) => v >= 5).map(([k, v]) => k)
 
-	let m = "month: " + filters.month
-	let y = "year: " + filters.year
-	let selector = dom("select",
-										 ["option", {value:""}, "NONE"],
-										 ...top_tags.map(t => ["option", {value:t, selected: filters.tag == t},t]))
+	let m = months[filters.month]
+	let y = filters.year
+	// let selector = dom("select",
+	// 									 ["option", {value:""}, "NONE"],
+	// 									 ...top_tags.map(t => ["option", {value:t, selected: filters.tag == t},t]))
+
+	let tagsselection = []
+	let activatetag = (t) => {
+		filters.tag.push(t)
+		render()
+	}
+	let deactivatetag = (t) => {
+		let i = filters.tag.findIndex(e => e == t)
+		if (i != -1) filters.tag.splice(i, 1) 
+		render()
+	}
+	let selector = dom(".selections",
+										 ...top_tags.map(t =>
+											 ['.tag-select',
+												["input",
+												 {type:"checkbox",
+													checked: filters.tag.includes(t),
+													oninput: e => e.target.checked ? activatetag(t) : deactivatetag(t)
+												 }],
+												["span", t]]))
 	let btns = dom(
 		".navigator",
 		 ["button", "prev", {onclick: () => change_month(filters.month-1)}],
 		 ["button", "next", {onclick: () => change_month(filters.month+1)}],
-		selector)
-	selector.onchange= (e) => {
-		filters.tag = e.target.value;
-		filters.tag == "" ? filters.tag = undefined : null
-		render()
-	}
 
-	display(top_bar, [btns, dom(["h4", m + " " + y])])
+		)
+	// selector.onchange= (e) => {
+	// 	filters.tag = e.target.value;
+	// 	filters.tag == "" ? filters.tag = undefined : null
+	// }
+
+	display(top_bar, [ dom(["h4", m + " " + y]), btns, selector])
+		 
 
 	// get month dates
 	let months_weeks = year.filter(week => monthIncludesWeek(filters.month, week))
@@ -243,6 +264,7 @@ ${place.value}
 
 			let title = date
 			add_block('log-spending-archive', title, content)
+				.then(() => view.remove())
 		}
 
 		let view = dom(
@@ -255,25 +277,65 @@ ${place.value}
 		document.body.appendChild(view)
 	}
 
-	let weekmouseenter = week => {week_total.innerText = 'week total: ' + week.reduce((a, day) => a+day.blocks.reduce((a, b) => a + parseFloat(b.price), 0), 0)}
+	let weekmouseenter = week => {week_total.innerText = 'week total: ' + week
+																.reduce((a, day) => a + day.blocks
+																				.filter(filterblock)
+																				.reduce((a, b) => a + parseFloat(b.price), 0), 0)}
 	let weekmouseexit = _ => {week_total.innerText = 'month total: ' + month_blocks.reduce((a, b) => a + parseFloat(b.price), 0)}
 
-	let week = week => dom(".week", {onmouseenter:() =>weekmouseenter(week), onmouseleave: weekmouseexit}, ...week.map(day))
+	let tagicon = (tag) => dom('.tag.'+tag) 
+
+	let week = week => dom(".week", {onmouseenter:() =>weekmouseenter(week), onmouseleave: weekmouseexit},
+												 ...week.map(day))
+
+	let filterblock = (b) => {
+		let contains = false
+		if (filters.tag.length == 0) return true
+		else b.tags
+			.map(t => t.trim())
+			.forEach(taggg => filters.tag.includes(taggg) ? contains = true : null)
+		return contains
+	} 
+
 	let day = day => [".day", 
-										["p",day.date+""],
-										["button", {onclick: () => newblock(day.date +" "+  day.month +" "+  day.year)}, "+"],
+										[".top", 
+											["span.date",day.date+""],
+											["button", {onclick: () => newblock(day.date +" "+  day.month +" "+  day.year)}, "+"]],
 										...day.blocks
-										.filter((b) => filters.tag ? b.tags.map(t => t.trim()).includes(filters.tag) : true)
+										.filter(filterblock)
 										.map(item)
 									 ]
+	let infopanel = (item) => {
+
+		let view = dom(
+			".popup",
+			{style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); '},
+			["button", {onclick: () => view.remove()}, "x"],
+			["p", "price: " + item.price],
+			["p", "place: " + item.title],
+			["p", "tags: " + item.tags.join(', ')],
+		)
+
+		console.log("tf")
+		document.body.appendChild(view)
+	}
+
 	let item = item  =>
 			[".item",
-			 ["span.price", "(" +item.price+")" ],
-			 ["span.title", item.title]
+			 {onclick: () => infopanel(item)},
+			 ["span.price", item.price+ " " ],
+			 ["span.title", item.title],
+				...item.tags.map(tagicon),
 			]
 
-	let month_blocks_view = weekly.map(week)
-	display(main_view, month_blocks_view)
+	let month_blocks_view = [dom('.week.sticky',
+															 ...['S', "M", 'T', 'W', 'T', "f", 'S']
+															 .map(d => ['.day-label', d])),
+													 ...weekly.map(week)]
+
+
+	display(main_view,month_blocks_view)
+												 
 	let week_total =  dom(["h4", 'month total: ' + month_blocks.reduce((a, b) => a + parseFloat(b.price), 0)])
 	display(bottom_bar, [week_total])
 }

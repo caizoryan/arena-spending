@@ -203,7 +203,7 @@ function render(){
 				return acc
 			} , {})
 
-	let top_tags = Object.entries(tags).filter(([k, v]) => v >= 5).map(([k, v]) => k)
+	let top_tags = Object.entries(tags).filter(([k, v]) => v >= 1).sort((a, b) => a.v - b.v).map(([k, v]) => k)
 
 	let m = months[filters.month]
 	let y = filters.year

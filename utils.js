@@ -41,8 +41,6 @@ let parseSpendItem = (block) => {
 					// validate by checking if [1] is number
 					// validate by checking if [3] includes []
 
-					console.log("is date", e[0], new Date(e[0]).toString() != "Invalid Date")
-					console.log("is date", e[0], new Date(e[0]).toString() != "Invalid Date")
 					if (new Date(e[0]).toString() != "Invalid Date"
 							&& !isNaN(parseFloat(e[1]))
 							&& e[3].includes('[')
@@ -54,7 +52,6 @@ let parseSpendItem = (block) => {
 				})
 				.filter(e => e!=undefined)
 
-		console.log(parsed)
 		return parsed
 	}
   let earnings = false
@@ -70,6 +67,10 @@ let parseSpendItem = (block) => {
 	let date = block.title.trim()
 
   if (price.charAt(0) == "+") earnings = true
+	if (earnings){
+		price *= -1
+		console.log(price)
+	}
   return { price, title, tags, earnings, date }
 }
 

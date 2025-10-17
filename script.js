@@ -189,6 +189,18 @@ let findDaysBlocks = (days, day) => days.filter((block) => {
 	return d == day.date && m == day.month && y == day.year;
 });
 
+let infopanel = (item) => {
+	let view = dom(
+		".popup",
+		{ style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); ' },
+		["button", { onclick: () => view.remove() }, "x"],
+		["p", "price: " + item.price],
+		["p", "place: " + item.title],
+		["p", "tags: " + item.tags.join(', ')],
+	)
+
+	document.body.appendChild(view)
+}
 
 let item = item =>
 	[".item",
@@ -198,12 +210,15 @@ let item = item =>
 		...item.tags.map(tagicon),
 	]
 
+let weekmouseenter = week => {
+	week_total_el.innerText = 'W (' + week
+		.reduce((a, day) => a + day.blocks
+			.filter(filterblock)
+			.reduce((a, b) => a + parseFloat(b.price), 0), 0) + ')'
+}
 let week = week => dom(
 	".week",
-	{
-		onmouseenter: () => weekmouseenter(week),
-		onmouseleave: weekmouseexit
-	},
+	{ onmouseenter: () => weekmouseenter(week), },
 	...week.map(day))
 
 let month_view = (weekly) => [
@@ -221,6 +236,21 @@ let day = day => [".day",
 		.filter(filterblock)
 		.map(item)
 ]
+
+let tagicon = (tag) => dom('.tag.' + tag)
+
+let week_total_el = dom(["h4", ''])
+let month_total_el = dom(["h4", ''])
+let month_total = (month_blocks) => month_blocks.reduce((a, b) => a + parseFloat(b.price), 0)
+
+let filterblock = (b) => {
+	let contains = false
+	if (filters.tag.length == 0) return true
+	else b.tags
+		.map(t => t.trim())
+		.forEach(taggg => filters.tag.includes(taggg) ? contains = true : null)
+	return contains
+}
 
 function render() {
 	// recalculate block filters
@@ -262,7 +292,7 @@ function render() {
 				{
 					type: "checkbox",
 					checked: filters.tag.includes(t),
-					oninput: e => e.target.checked ? activatetag(t) : deactivatetag(t)
+					onchange: e => e.target.checked ? activatetag(t) : deactivatetag(t)
 				}], ["span", t]])
 
 	let selector = dom(".selections", ...tagels)
@@ -273,7 +303,6 @@ function render() {
 
 	)
 
-	display(top_bar, [dom(["h4", m + " " + y]), btns, selector])
 
 	// get month dates
 	let months_weeks = year.filter(week => monthIncludesWeek(filters.month, week))
@@ -309,37 +338,24 @@ ${place.value}
 	}
 
 
-	let tagicon = (tag) => dom('.tag.' + tag)
 
-
-	let filterblock = (b) => {
-		let contains = false
-		if (filters.tag.length == 0) return true
-		else b.tags
-			.map(t => t.trim())
-			.forEach(taggg => filters.tag.includes(taggg) ? contains = true : null)
-		return contains
-	}
-	let infopanel = (item) => {
-		let view = dom(
-			".popup",
-			{ style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); ' },
-			["button", { onclick: () => view.remove() }, "x"],
-			["p", "price: " + item.price],
-			["p", "place: " + item.title],
-			["p", "tags: " + item.tags.join(', ')],
-		)
-
-		console.log("tf")
-		document.body.appendChild(view)
-	}
-
-
-
+	const event = new Event("change");
+	let invert = dom('button', {
+		onclick: () => document.querySelectorAll("input[type='checkbox']")
+			.forEach((e) => {
+				console.log(e.checked)
+				if (e.checked) {e.checked = false}
+				else {e.checked = true}
+				e.dispatchEvent(event)
+				// e.checked == 'true'
+				// 	? e.checked = false
+				// 	: e.checked = true
+				// render()
+			})
+	}, "invert")
+	display(top_bar, [dom(["h4", m + " " + y]), btns, selector, invert])
 	display(main_view, month_view(weekly))
-
-	let week_total = dom(["h4", 'month total: ' + month_blocks.reduce((a, b) => a + parseFloat(b.price), 0)])
-	display(bottom_bar, [week_total])
+	display(month_total_el, [dom("h4", 'M (' + month_total(month_blocks) + ')')])
 }
 
 let archive_month = () => {
@@ -357,7 +373,7 @@ function display(parent, el) {
 let top_bar = dom(['.top-bar', ["h4", "top-bar"]])
 let main_view = dom(['.main-view', ["h4", "main"]])
 let filter_totals = dom('.filter-totals')
-let bottom_bar = dom(['.bottom-bar', ["h4", "bottom"], filter_totals])
+let bottom_bar = dom(['.bottom-bar', month_total_el, week_total_el])
 
 let root = dom(
 	".root",

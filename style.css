@@ -125,7 +125,7 @@ span.price {
   padding: .5em;
   margin: 1em;
   height: 85%;
-  grid-template-columns: 10% 8% 72%;
+  grid-template-columns: 10% 8% 68% 4%;
 	display: grid;
 	grid-gap: 1em;
 }

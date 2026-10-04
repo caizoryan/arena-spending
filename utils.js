@@ -4,7 +4,7 @@
 // ******************************
 //
 
-import { months } from "./script.js";
+import { months } from "./months.js";
 
 /**
  * Finds the blocks of a specific day
@@ -28,10 +28,15 @@ let find_blocks = (day, blocks) => blocks
  * @param {Object} block
  * @returns {SpendItem | SpendItem[]}
  */
+let blockContent = (block) => {
+	if (typeof block.content === 'string') return block.content
+	return block.content?.markdown || block.content?.plain || ''
+}
+
 let parseSpendItem = (block) => {
 	if (months.includes(block.title.split(" ")[0].trim())){
 		// parse as table
-		let parsed = block.content
+		let parsed = blockContent(block)
 				.split('\n')
 				.filter(e => e!="")
 		// ["date", "price", "place", "tags"]
@@ -55,7 +60,7 @@ let parseSpendItem = (block) => {
 		return parsed
 	}
   let earnings = false
-  let [price, title, tags] = block.content.split(`\n`);
+  let [price, title, tags] = blockContent(block).split(`\n`);
   if (!tags || !price || !title) return undefined
 
   title = title
@@ -135,4 +140,4 @@ const totalSpentWeek = (week, contents) => {
 }
 
 
-export { find_blocks, parseSpendItem, totalSpentDay, totalSpentWeek, createTagFilter, createOrTagFilter, createNotOrTagFilter }
+export { months, find_blocks, parseSpendItem, totalSpentDay, totalSpentWeek, createTagFilter, createOrTagFilter, createNotOrTagFilter }

@@ -1,12 +1,13 @@
-import { auth } from "./auth.js";
+ import { auth } from "./auth.js";
 import { generate_year } from "./generate_year.js";
-import { parseSpendItem } from "./utils.js";
+import { months, parseSpendItem } from "./utils.js";
 
-let host = "http://localhost:3000/api/";
-let year = generate_year(2025)
+let year = generate_year(2026)
 
+let host = "http://localhost:3001/api/";
+// let host = "https://api.are.na/v3/";
 export const update_block = (block_id, body, slug, fuck = false) => {
-	fetch(host + `blocks/${block_id}`, {
+	return fetch(host + `blocks/${block_id}`, {
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: "Bearer " + auth,
@@ -15,20 +16,21 @@ export const update_block = (block_id, body, slug, fuck = false) => {
 		body: JSON.stringify(body),
 	}).then((res) => {
 		if (fuck) { fuck_refresh(slug) }
-		return res
+		return res.json()
 	});
 };
 
 export const add_block = (slug, title, content) => {
 	console.log("adding", title, "to", slug)
-	fetch(host + "channels/" + slug + "/blocks", {
+	return fetch(host + "blocks", {
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: "Bearer " + auth,
 		},
 		method: "POST",
 		body: JSON.stringify({
-			content: content,
+			value: content,
+			channel_ids: [channel.id],
 		}),
 	})
 		.then((response) => response.json())
@@ -44,7 +46,9 @@ export const add_block = (slug, title, content) => {
 export const get_channel = async (slug) => {
 	let force = true
 	console.log("get channel called", slug);
-	return await fetch(host + `channels/${slug}?per=100&${force ? "force=true" : "offline=true"}` /**&page=5**/, {
+	const cache_flag = force ? "force=true" : "offline=true"
+
+	const channel_res = await fetch(host + `channels/${slug}?${cache_flag}`, {
 		headers: {
 			// Authorization: `Bearer ${auth}`,
 			// cache: "no-store",
@@ -52,15 +56,25 @@ export const get_channel = async (slug) => {
 			// referrerPolicy: "no-referrer",
 		},
 	})
-		.then((response) => response.json())
-		.then((data) => {
-			console.log("response", data)
-			return data;
-		});
+	const channel_data = await channel_res.json()
+
+	const contents_res = await fetch(host + `channels/${slug}/contents?per=150&${cache_flag}`, {
+		headers: {
+			// Authorization: `Bearer ${auth}`,
+		},
+	})
+	const contents_data = await contents_res.json()
+
+	const data = {
+		...channel_data,
+		contents: contents_data.data || contents_data,
+	}
+	console.log("response", data)
+	return data
 };
 let channel
 
-get_channel("log-spending-archive").then((res) => {
+get_channel("log-spending-new-s7t16f6dt8e").then((res) => {
 	channel = res
 	init()
 })
@@ -110,20 +124,7 @@ let year_blocks
 let month_blocks
 let items
 
-export let months = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-];
+
 
 let archive_slug = "log-spending-archive"
 
@@ -144,7 +145,6 @@ function archive_year() {
 	}
 }
 let post = (blocks) => {
-
 	console.log("posting blocks", blocks)
 	blocks.forEach((b) => {
 		console.log("posting", b.title, "to", archive_slug)
@@ -170,8 +170,8 @@ function change_month(month) {
 // else week view
 // same with tags
 let filters = {
-	year: 2025,
-	month: 9,
+	year: 2026,
+	month: 0,
 	week: undefined,
 	tag: []
 }
@@ -189,10 +189,15 @@ let findDaysBlocks = (days, day) => days.filter((block) => {
 	return d == day.date && m == day.month && y == day.year;
 });
 
-let infopanel = (item) => {
+let infopanel = (item, x = 300, y = 300) => {
+	if (x + 300 > window.innerWidth) { x -= 300 }
+	if (y + 300 > window.innerHeight) { y -= 300 }
+
+	 document.querySelectorAll('.popup').forEach(e => e.remove())
+
 	let view = dom(
 		".popup",
-		{ style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); ' },
+		{ style: `position: fixed; width: 300px;height: 300px; background: yellow; top: ${y}px; left: ${x}px; ` },
 		["button", { onclick: () => view.remove() }, "x"],
 		["p", "price: " + item.price],
 		["p", "place: " + item.title],
@@ -204,8 +209,11 @@ let infopanel = (item) => {
 
 let item = item =>
 	[".item",
-		{ onclick: () => infopanel(item) },
-		["span.price", item.price + " "],
+		{ onclick: (e) => infopanel(item, e.clientX+15, e.clientY+15) },
+	 ["span.price",
+		parseFloat(item.price) < 0
+			? '+'+(item.price*-1) + " "
+			: ""+item.price + " "],
 		["span.title", item.title],
 		...item.tags.map(tagicon),
 	]
@@ -214,7 +222,7 @@ let weekmouseenter = week => {
 	week_total_el.innerText = 'W (' + week
 		.reduce((a, day) => a + day.blocks
 			.filter(filterblock)
-			.reduce((a, b) => a + parseFloat(b.price), 0), 0) + ')'
+			.reduce((a, b) => Math.floor(a + parseFloat(b.price)), 0), 0) + ')'
 }
 let week = week => dom(
 	".week",
@@ -227,6 +235,30 @@ let month_view = (weekly) => [
 			.map(d => ['.day-label', d])),
 	...weekly.map(week)]
 
+let newblock = (date) => {
+	let price = dom("input", { type: 'number' })
+	let place = dom("input")
+	let tags = dom("input")
+
+	let save = () => {
+		let content = `${price.value}
+${place.value}
+[${tags.value}]`
+
+		let title = date
+		add_block('log-spending-archive', title, content)
+			.then(() => view.remove())
+	}
+
+	let view = dom(
+		".popup",
+		{ style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); ' },
+		["button", { onclick: () => view.remove() }, "x"],
+		price, place, tags,
+		["button", { onclick: save }, "save"]
+	)
+	document.body.appendChild(view)
+}
 
 let day = day => [".day",
 	[".top",
@@ -312,30 +344,6 @@ function render() {
 			return day
 		}))
 
-	let newblock = (date) => {
-		let price = dom("input", { type: 'number' })
-		let place = dom("input")
-		let tags = dom("input")
-
-		let save = () => {
-			let content = `${price.value}
-${place.value}
-[${tags.value}]`
-
-			let title = date
-			add_block('log-spending-archive', title, content)
-				.then(() => view.remove())
-		}
-
-		let view = dom(
-			".popup",
-			{ style: 'position: fixed; width: 300px;height: 300px; background: yellow; top: calc( (100vh - 600px) / 2); left: calc((100vw - 600px) / 2); ' },
-			["button", { onclick: () => view.remove() }, "x"],
-			price, place, tags,
-			["button", { onclick: save }, "save"]
-		)
-		document.body.appendChild(view)
-	}
 
 
 
@@ -355,7 +363,7 @@ ${place.value}
 	}, "invert")
 	display(top_bar, [dom(["h4", m + " " + y]), btns, selector, invert])
 	display(main_view, month_view(weekly))
-	display(month_total_el, [dom("h4", 'M (' + month_total(month_blocks) + ')')])
+	display(month_total_el, [dom("h4", 'M (' + Math.floor(month_total(month_blocks.filter(filterblock))) + ')')])
 }
 
 let archive_month = () => {

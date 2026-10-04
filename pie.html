@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spending — categories</title>
+  <link rel="stylesheet" href="./pie.css" />
+</head>
+
+<body>
+  <div class="pie-page">
+    <header class="controls">
+      <div class="tag-area">
+        <p class="instructions">Select a box, then click tags to assign them to that category.</p>
+        <div id="tag-buttons" class="tag-buttons" aria-label="Tags"></div>
+      </div>
+      <div id="category-boxes" class="category-boxes" aria-label="Pie chart categories"></div>
+    </header>
+
+    <main id="months" class="months" aria-live="polite"></main>
+  </div>
+
+  <script type="module" src="./pie.js"></script>
+</body>
+
+</html>
